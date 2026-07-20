@@ -332,7 +332,7 @@ class Sketch {
     this.canvas.style.minHeight = '100vh';
     this.canvas.style.minHeight = 'calc(var(--vh, 1vh) * 100)';
     this.canvas.style.display = 'block';
-    this.canvas.style.background = '#0d0d0d';
+    this.canvas.style.background = 'radial-gradient(ellipse at center, #1c1c1c 0%, #0d0d0d 45%, #050505 100%)';
     this.canvas.style.zIndex = '-1';
 
     document.body.appendChild(this.canvas);
@@ -644,6 +644,15 @@ class Shape {
     this.ctx.translate(-this.x, -this.y);
 
     this.ctx.globalAlpha = this.ratio;
+
+    // Depth shadow: the current transform already scales blur/offset by
+    // this.ratio, so tiles near the center (closer, larger) cast a soft
+    // shadow that reads as "floating", while tiles near the rim (farther,
+    // smaller) shrink to almost no shadow, sinking into the background.
+    this.ctx.shadowColor = `rgba(0, 0, 0, ${0.55 * this.ratio})`;
+    this.ctx.shadowBlur = 30;
+    this.ctx.shadowOffsetY = 20;
+
     this.ctx.drawImage(
       this.image,
       this.image.width / 2 - this.size / 2,
