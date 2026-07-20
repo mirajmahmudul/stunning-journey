@@ -332,7 +332,7 @@ class Sketch {
     this.canvas.style.minHeight = '100vh';
     this.canvas.style.minHeight = 'calc(var(--vh, 1vh) * 100)';
     this.canvas.style.display = 'block';
-    this.canvas.style.background = '#01012A';
+    this.canvas.style.background = '#0d0d0d';
     this.canvas.style.zIndex = '-1';
 
     document.body.appendChild(this.canvas);
