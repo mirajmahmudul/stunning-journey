@@ -9,7 +9,7 @@
 }
 
 html {
-  background: #0d0d0d;
+  background: radial-gradient(ellipse at center, #1c1c1c 0%, #0d0d0d 45%, #050505 100%);
   color: #33def4;
 }
 
@@ -32,7 +32,7 @@ h1 {
 
 .loading {
   z-index: 9999;
-  background: #0d0d0d;
+  background: radial-gradient(ellipse at center, #1c1c1c 0%, #0d0d0d 45%, #050505 100%);
   color: #33def4;
   text-align: center;
   position: fixed;
