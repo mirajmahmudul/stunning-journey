@@ -9,7 +9,7 @@
 }
 
 html {
-  background: #01012A;
+  background: #0d0d0d;
   color: #33def4;
 }
 
@@ -32,7 +32,7 @@ h1 {
 
 .loading {
   z-index: 9999;
-  background: #01012A;
+  background: #0d0d0d;
   color: #33def4;
   text-align: center;
   position: fixed;
