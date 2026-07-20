@@ -543,12 +543,33 @@ class Sketch {
     document.body.style.cursor = 'initial';
   }
 
+  drawGlow(t) {
+    // A soft white light sitting at the center of the sphere, slowly
+    // breathing in size and brightness. It paints behind every tile, so it
+    // reads as ambient light coming from deep inside the scene rather than
+    // sitting on top of it, which is what sells the sense of depth.
+    const pulse = 0.5 + 0.5 * Math.sin(t * 0.0006);
+    const radius = Math.min(this.width, this.height) * (0.32 + 0.06 * pulse);
+    const alpha = 0.05 + 0.035 * pulse;
+
+    const glow = this.ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+    glow.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
+    glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+    this.ctx.save();
+    this.ctx.fillStyle = glow;
+    this.ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+    this.ctx.restore();
+  }
+
   render(t) {
     this.resetParams();
 
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.save();
     this.ctx.translate(this.width / 2, this.height / 2);
+
+    this.drawGlow(t);
 
     let hoveredIndex;
     for (let i = 0; i < this.shapes.length; i++) {
