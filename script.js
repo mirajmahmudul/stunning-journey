@@ -384,6 +384,10 @@ class Sketch {
     if (this.preWidth === window.innerWidth) {
       this.height = this.canvas.height = window.innerHeight;
 
+      if (this.P) {
+        this.P.resize(this.width, this.height);
+      }
+
       return;
     }
 
@@ -462,6 +466,7 @@ class Sketch {
 
     this.G = new Glitch(this.ctx, this.width, this.height, 50, 200);
     this.M = new DrawMainImage(this.ctx, this.width, this.height);
+    this.P = new Particles(this.ctx, this.width, this.height, 70);
 
     this.render(0);
   }
@@ -570,6 +575,7 @@ class Sketch {
     this.ctx.translate(this.width / 2, this.height / 2);
 
     this.drawGlow(t);
+    this.P.draw();
 
     let hoveredIndex;
     for (let i = 0; i < this.shapes.length; i++) {
@@ -748,6 +754,68 @@ class Glitch {
     this.dataArr = [];
     this.getImageData();
     this.addImage(t);
+  }
+}
+
+class Particles {
+  constructor(ctx, width, height, count) {
+    this.ctx = ctx;
+    this.width = width;
+    this.height = height;
+    this.count = count;
+    this.items = [];
+
+    this.setup();
+  }
+
+  setup() {
+    this.items = [];
+
+    for (let i = 0; i < this.count; i++) {
+      this.items.push(this.createParticle(true));
+    }
+  }
+
+  // spawnFromBottom: true when a particle first drifts off the top of the
+  // screen and needs to reappear below, false for the initial fill of the
+  // whole screen so it doesn't look empty on load.
+  createParticle(spawnAnywhere) {
+    return {
+      x: Utilities.randomRange(-this.width / 2, this.width / 2),
+      y: spawnAnywhere
+        ? Utilities.randomRange(-this.height / 2, this.height / 2)
+        : this.height / 2 + Utilities.randomRange(10, 60),
+      r: Utilities.randomRange(0.5, 1.8),
+      speed: Utilities.randomRange(0.15, 0.55),
+      drift: Utilities.randomRange(-0.08, 0.08),
+      alpha: Utilities.randomRange(0.15, 0.6)
+    };
+  }
+
+  resize(width, height) {
+    this.width = width;
+    this.height = height;
+  }
+
+  draw() {
+    for (let i = 0; i < this.items.length; i++) {
+      const p = this.items[i];
+
+      p.y -= p.speed;
+      p.x += p.drift;
+
+      if (p.y < -this.height / 2 - 10) {
+        Object.assign(p, this.createParticle(false));
+      }
+
+      this.ctx.save();
+      this.ctx.globalAlpha = p.alpha;
+      this.ctx.fillStyle = '#ffffff';
+      this.ctx.beginPath();
+      this.ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.restore();
+    }
   }
 }
 
