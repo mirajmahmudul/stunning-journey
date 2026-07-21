@@ -575,7 +575,7 @@ class Sketch {
     this.ctx.translate(this.width / 2, this.height / 2);
 
     this.drawGlow(t);
-    this.P.draw();
+    this.P.draw(t);
 
     let hoveredIndex;
     for (let i = 0; i < this.shapes.length; i++) {
@@ -692,6 +692,25 @@ class Shape {
       this.size
     );
 
+    // Shiny edge: a diagonal highlight sweeping through the border, plus a
+    // small soft glow, so each tile catches light like glass instead of
+    // having a flat, dead outline.
+    const half = this.size / 2;
+    const edge = this.ctx.createLinearGradient(
+      this.x - half, this.y - half,
+      this.x + half, this.y + half
+    );
+    edge.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+    edge.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');
+    edge.addColorStop(1, 'rgba(255, 255, 255, 0.95)');
+
+    this.ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
+    this.ctx.shadowBlur = 8;
+    this.ctx.shadowOffsetY = 0;
+    this.ctx.strokeStyle = edge;
+    this.ctx.lineWidth = 2;
+    this.ctx.strokeRect(this.x - half, this.y - half, this.size, this.size);
+
     this.ctx.restore();
   }
 }
@@ -785,10 +804,13 @@ class Particles {
       y: spawnAnywhere
         ? Utilities.randomRange(-this.height / 2, this.height / 2)
         : this.height / 2 + Utilities.randomRange(10, 60),
-      r: Utilities.randomRange(0.5, 1.8),
+      r: Utilities.randomRange(1, 3),
       speed: Utilities.randomRange(0.15, 0.55),
       drift: Utilities.randomRange(-0.08, 0.08),
-      alpha: Utilities.randomRange(0.15, 0.6)
+      minAlpha: Utilities.randomRange(0.08, 0.25),
+      maxAlpha: Utilities.randomRange(0.6, 1),
+      phase: Utilities.randomRange(0, Math.PI * 2),
+      twinkleSpeed: Utilities.randomRange(0.0015, 0.005)
     };
   }
 
@@ -797,7 +819,7 @@ class Particles {
     this.height = height;
   }
 
-  draw() {
+  draw(t) {
     for (let i = 0; i < this.items.length; i++) {
       const p = this.items[i];
 
@@ -808,9 +830,14 @@ class Particles {
         Object.assign(p, this.createParticle(false));
       }
 
+      const twinkle = 0.5 + 0.5 * Math.sin(t * p.twinkleSpeed + p.phase);
+      const alpha = p.minAlpha + (p.maxAlpha - p.minAlpha) * twinkle;
+
       this.ctx.save();
-      this.ctx.globalAlpha = p.alpha;
+      this.ctx.globalAlpha = alpha;
       this.ctx.fillStyle = '#ffffff';
+      this.ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+      this.ctx.shadowBlur = p.r * 3;
       this.ctx.beginPath();
       this.ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
       this.ctx.fill();
