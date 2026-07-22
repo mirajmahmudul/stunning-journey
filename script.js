@@ -332,7 +332,7 @@ class Sketch {
     this.canvas.style.minHeight = '100vh';
     this.canvas.style.minHeight = 'calc(var(--vh, 1vh) * 100)';
     this.canvas.style.display = 'block';
-    this.canvas.style.background = 'radial-gradient(ellipse at center, #1c1c1c 0%, #0d0d0d 45%, #050505 100%)';
+    this.canvas.style.background = 'radial-gradient(ellipse at center, #0a0a1f 0%, #030308 45%, #000000 100%)';
     this.canvas.style.zIndex = '-1';
 
     document.body.appendChild(this.canvas);
