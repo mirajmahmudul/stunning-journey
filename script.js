@@ -512,7 +512,7 @@ class Sketch {
       this.focus.y += (this.touchInfos.mouse.y - this.focus.y) * 0.16;
 
       this.ctx.save();
-      this.ctx.strokeStyle = '#FE296D';
+      this.ctx.strokeStyle = 'rgba(254, 41, 109, 0.7)';
       this.ctx.lineWidth = 1;
       this.ctx.strokeRect(this.focus.x - this.focus.s / 2, this.focus.y - this.focus.s / 2, this.focus.s, this.focus.s);
       this.ctx.restore();
@@ -522,9 +522,9 @@ class Sketch {
       this.focus.y += (s.y - this.focus.y) * 0.16;
 
       this.ctx.save();
-      this.ctx.strokeStyle = '#FE296D';
+      this.ctx.strokeStyle = 'rgba(254, 41, 109, 0.85)';
       //this.ctx.globalCompositeOperation = 'lighter';
-      this.ctx.lineWidth = 5 * s.ratio;
+      this.ctx.lineWidth = 3 * s.ratio;
       this.ctx.strokeRect(this.focus.x - this.focus.s / 2, this.focus.y - this.focus.s / 2, this.focus.s, this.focus.s);
       this.ctx.restore();
     };
@@ -672,13 +672,16 @@ class Shape {
 
     this.ctx.globalAlpha = this.ratio;
 
-    // Depth shadow: the current transform already scales blur/offset by
-    // this.ratio, so tiles near the center (closer, larger) cast a soft
-    // shadow that reads as "floating", while tiles near the rim (farther,
-    // smaller) shrink to almost no shadow, sinking into the background.
-    this.ctx.shadowColor = `rgba(0, 0, 0, ${0.55 * this.ratio})`;
-    this.ctx.shadowBlur = 30;
-    this.ctx.shadowOffsetY = 20;
+    const half = this.size / 2;
+
+    // Cheap flat shadow, no shadowBlur. shadowBlur is by far the most
+    // expensive canvas operation, and running it on every tile every frame
+    // (~100+ tiles at 60fps) was the source of the lag. A solid offset
+    // rect peeking out behind the tile still reads as "floating" without
+    // the blur cost. The current transform's scale(ratio) already shrinks
+    // this offset for far tiles automatically.
+    this.ctx.fillStyle = `rgba(0, 0, 0, ${0.4 * this.ratio})`;
+    this.ctx.fillRect(this.x - half + 6, this.y - half + 10, this.size, this.size);
 
     this.ctx.drawImage(
       this.image,
@@ -686,16 +689,14 @@ class Shape {
       this.image.height / 2 - this.size / 2,
       this.size,
       this.size,
-      this.x - this.size / 2,
-      this.y - this.size / 2,
+      this.x - half,
+      this.y - half,
       this.size,
       this.size
     );
 
-    // Shiny edge: a diagonal highlight sweeping through the border, plus a
-    // small soft glow, so each tile catches light like glass instead of
-    // having a flat, dead outline.
-    const half = this.size / 2;
+    // Shiny edge: a diagonal highlight gradient through the border. No
+    // shadowBlur here either, for the same reason as above.
     const edge = this.ctx.createLinearGradient(
       this.x - half, this.y - half,
       this.x + half, this.y + half
@@ -704,9 +705,6 @@ class Shape {
     edge.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');
     edge.addColorStop(1, 'rgba(255, 255, 255, 0.95)');
 
-    this.ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
-    this.ctx.shadowBlur = 8;
-    this.ctx.shadowOffsetY = 0;
     this.ctx.strokeStyle = edge;
     this.ctx.lineWidth = 2;
     this.ctx.strokeRect(this.x - half, this.y - half, this.size, this.size);
@@ -820,6 +818,8 @@ class Particles {
   }
 
   draw(t) {
+    const ctx = this.ctx;
+
     for (let i = 0; i < this.items.length; i++) {
       const p = this.items[i];
 
@@ -833,15 +833,19 @@ class Particles {
       const twinkle = 0.5 + 0.5 * Math.sin(t * p.twinkleSpeed + p.phase);
       const alpha = p.minAlpha + (p.maxAlpha - p.minAlpha) * twinkle;
 
-      this.ctx.save();
-      this.ctx.globalAlpha = alpha;
-      this.ctx.fillStyle = '#ffffff';
-      this.ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
-      this.ctx.shadowBlur = p.r * 3;
-      this.ctx.beginPath();
-      this.ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      this.ctx.fill();
-      this.ctx.restore();
+      // Soft halo + bright core instead of shadowBlur. shadowBlur run on
+      // ~70 particles every frame was a big chunk of the lag; two plain
+      // circle fills give a similar twinkling-star look for a fraction of
+      // the cost, and skip save/restore since nothing here needs undoing.
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.25})`;
+      ctx.arc(p.x, p.y, p.r * 2.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 }
